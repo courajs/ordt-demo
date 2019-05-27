@@ -1,26 +1,43 @@
-import React from 'react';
-import logo from './logo.svg';
+import React, { useState } from 'react';
 import './App.css';
+import base from './data.js';
+import { collectString } from './ordts.js';
 
 function App() {
+  let [collections, setCollections] = useState([base]);
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      {collections.map(c => <StringThing collection={c} />)}
     </div>
   );
 }
 
 export default App;
+
+
+function StringThing({collection}) {
+  let [isOpen, setOpen] = useState(false);
+
+  let value = collectString(collection.atoms);
+
+  return <div>
+      <textarea>{value}</textarea>
+      <button onClick={()=>setOpen(!isOpen)}>
+        { isOpen ?
+            "Hide history"
+            :
+            "Show history"
+        }
+      </button>
+      { isOpen ?
+          <History atoms={collection.atoms} />
+          : null
+      }
+    </div>
+}
+
+function History({atoms}) {
+  return <ol>
+      {atoms.map(a=><li><pre>{JSON.stringify(a)}</pre></li>)}
+    </ol>
+}
