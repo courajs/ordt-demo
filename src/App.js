@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import './App.css';
 import base from './data.js';
-import { collectString } from './ordts.js';
+import { evaluate } from './ordts/sequence.js';
 
 function App() {
-  let [collections, setCollections] = useState([base]);
+  let [collections] = useState([base]);
   return (
     <div className="App">
-      {collections.map(c => <StringThing collection={c} />)}
+      {collections.map(c => <StringThing collection={c} key={c.site} />)}
     </div>
   );
 }
@@ -16,12 +16,12 @@ export default App;
 
 
 function StringThing({collection}) {
-  let [isOpen, setOpen] = useState(false);
+  let [isOpen, setOpen] = useState(true);
 
-  let value = collectString(collection.atoms);
+  let value = evaluate(collection.atoms);
 
   return <div>
-      <textarea>{value}</textarea>
+      <textarea defaultValue={value}></textarea>
       <button onClick={()=>setOpen(!isOpen)}>
         { isOpen ?
             "Hide history"
@@ -38,6 +38,6 @@ function StringThing({collection}) {
 
 function History({atoms}) {
   return <ol>
-      {atoms.map(a=><li><pre>{JSON.stringify(a)}</pre></li>)}
+      {atoms.map(a=><li key={a.id.site+a.id.index}><pre>{JSON.stringify(a)}</pre></li>)}
     </ol>
 }
