@@ -29,3 +29,17 @@ it('evaluates a string with deletions', function() {
   ];
   expect(evaluate(atoms)).toEqual('ho');
 });
+
+it('can provide an index for the id of each character', function() {
+  let atoms = [
+    {type: 'root', id: id(0)},
+    {type: 'insert', id: id(1), value: {ch:'h', after: id(0)}},
+    {type: 'insert', id: id(2), value: {ch:'i', after: id(1)}},
+    {type: 'delete', id: id(3), value: id(2)},
+    {type: 'insert', id: id(4), value: {ch:'o', after: id(2)}},
+  ];
+  expect(indexedEvaluate(atoms)).toEqual({
+    value: 'ho',
+    index: [id(1), id(4)],
+  });
+});
