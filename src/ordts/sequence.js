@@ -17,3 +17,23 @@ export function indexedEvaluate(collection) {
     index: result.map(a=>a.id),
   }
 }
+
+export function inferDiff(collection, str) {
+  let { value, index } = indexedEvaluate(collection);
+
+  let lastSame = 0;
+  for (let i=0; i<value.length && i<str.length; i++) {
+    if (value[i] == str[i]) {
+      lastSame = i;
+    } else {
+      break;
+    }
+  }
+
+  if (lastSame === value.length-1 && lastSame === str.length-1) {
+    return {
+      full: collection.slice(),
+      fresh: [],
+    }
+  }
+}
