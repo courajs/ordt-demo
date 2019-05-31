@@ -1,8 +1,8 @@
 import { Sequence } from './ordts/sequence.js';
 
 const site = "5";
-const sitebefore = "4";
-const siteafter = "6";
+const site2 = "6";
+const site3 = "7";
 const siteother = "q";
 function id(index, s = site) {
   return {
@@ -121,5 +121,19 @@ describe('mutation operations', function() {
     s.insertAtom({type:'insert', id: id(2), value: {ch:'a', after: id(0)}});
     s.insertAtom({type:'insert', id: id(1, siteother), value: {ch:'b', after: id(0)}});
     expect(s.evaluate()).toEqual('ab');
+  });
+
+  // The example from http://archagon.net/blog/2018/03/24/data-laced-with-history/#causal-trees
+  it('merges a complex concurrent edit', function() {
+    let s1 = new Sequence(site, [{type:'root',id:id(0)}]);
+    s1.become('cmd');
+    let s2 = new Sequence(site2, s1.atoms.slice());
+    let s3 = new Sequence(site3, s1.atoms.slice());
+    s1.become('ctrl');
+    s2.become('cmd-alt');
+    s3.become('cmd-del');
+    s1.mergeAtoms(s2.atoms);
+    s1.mergeAtoms(s3.atoms);
+    expect(s1.evaluate()).toEqual('ctrl-alt-del');
   });
 });

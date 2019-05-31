@@ -102,6 +102,18 @@ export class Sequence {
     return true;
   }
 
+  mergeAtoms(atoms) {
+    return this.insertAtoms(atoms.filter(maybeNewAtom=>!this.atoms.find(existingAtom=>idEq(maybeNewAtom.id,existingAtom.id))));
+  }
+
+  insertAtoms(atoms) {
+    let prevLength;
+    do {
+      prevLength = atoms.length;
+      atoms = atoms.filter(a => !this.insertAtom(a));
+    } while (atoms.length > 0 && atoms.length < prevLength);
+  }
+
   // Because of the way DOM input events work, we don't get granular information
   // about exactly how an input/textarea is being changed. Instead, we have to
   // figure it out based on the old and new values.
