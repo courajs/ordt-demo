@@ -1,11 +1,17 @@
-export function idEq(a, b) {
-  return a.site === b.site && a.index === b.index;
+export function idEq(idA, idB) {
+  return idA.site === idB.site && idA.index === idB.index;
 }
-export function idLt(a, b) {
-  return a.lamport < b.lamport || (a.lamport === b.lamport && a.site < b.site);
+export function idLt(idA, idB) {
+  return idA.lamport < idB.lamport || (idA.lamport === idB.lamport && idA.site < idB.site);
 }
-export function siblingLt(a, b) {
-  return a.lamport > b.lamport || (a.lamport === b.lamport && a.site < b.site);
+export function siblingLt(atomA, atomB) {
+  if (atomA.type === 'delete' && atomB.type !== 'delete') {
+    return true;
+  }
+  if (atomA.type !== 'delete' && atomB.type === 'delete') {
+    return false;
+  }
+  return atomA.id.lamport > atomB.id.lamport || (atomA.id.lamport === atomB.id.lamport && atomA.id.site < atomB.id.site);
 }
 export function parent(atom) {
   switch (atom.type) {
@@ -23,7 +29,7 @@ export function parent(atom) {
 export class Sequence {
   constructor(id, atoms) {
     this.id = id;
-    this.atoms = atoms;
+    this.atoms = atoms.slice();
     this._determineIndexAndLamport();
   }
 
@@ -94,11 +100,14 @@ export class Sequence {
 
     let placeBefore = parentIndex+1;
     for(let i = 0; i < siblingIndices.length; i++) {
-      if (siblingLt(this.atoms[siblingIndices[i]].id, atom.id)) {
+      if (siblingLt(this.atoms[siblingIndices[i]], atom)) {
         placeBefore = siblingIndices[i+1] || this.atoms.length;
       }
     }
     this.atoms.splice(placeBefore, 0, atom);
+    if (atom.id.lamport > this.currentLamport) {
+      this.currentLamport = atom.id.lamport;
+    }
     return true;
   }
 

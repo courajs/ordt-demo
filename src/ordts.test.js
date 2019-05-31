@@ -123,13 +123,47 @@ describe('mutation operations', function() {
     expect(s.evaluate()).toEqual('ab');
   });
 
+  it('always sorts sibling deletes before inserts', function() {
+    let s1 = new Sequence(site,[{type:'root',id:id(0)}]);
+    s1.become('ab');
+    let s2 = new Sequence(site2,s1.atoms);
+
+    // delete with lamport 3
+    s1.become('a');
+
+    // an insert after the deleted character, with a higher lamport than the deletion
+    s2.become('abc');
+    s2.become('abxc');
+
+    s1.mergeAtoms(s2.atoms);
+
+    expect(s1.evaluate()).toEqual('axc');
+    expect(s1.atoms).toMatchObject([
+      {type:'root',id:id(0)},
+      {type:'insert',id:id(1),value:{ch:'a', after:id(0)}},
+      {type:'insert',id:id(2),value:{ch:'b', after:id(1)}},
+      {type:'delete',id:id(3),value:id(2)},
+      {
+        type:'insert',
+        id:{site:site2, lamport:4, index:2},
+        value:{ch:'x', after:id(2)},
+      },
+      {
+        type:'insert',
+        id: {site:site2, lamport:3, index:1},
+        value:{ch:'c', after:id(2)}},
+    ]);
+  });
+
   // The example from http://archagon.net/blog/2018/03/24/data-laced-with-history/#causal-trees
   it('merges a complex concurrent edit', function() {
     let s1 = new Sequence(site, [{type:'root',id:id(0)}]);
     s1.become('cmd');
-    let s2 = new Sequence(site2, s1.atoms.slice());
-    let s3 = new Sequence(site3, s1.atoms.slice());
+    let s2 = new Sequence(site2, s1.atoms);
+    let s3 = new Sequence(site3, s1.atoms);
     s1.become('ctrl');
+    s2.become('cmd-fuck');
+    s2.become('cmd');
     s2.become('cmd-alt');
     s3.become('cmd-del');
     s1.mergeAtoms(s2.atoms);
@@ -137,3 +171,4 @@ describe('mutation operations', function() {
     expect(s1.evaluate()).toEqual('ctrl-alt-del');
   });
 });
+
