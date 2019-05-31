@@ -46,10 +46,6 @@ export class Sequence {
     this.currentLamport = lamport;
   }
 
-  fork() {
-    return new Sequence(Math.random().toString(), this.atoms);
-  }
-
   nextId() {
     return {
       site: this.id,

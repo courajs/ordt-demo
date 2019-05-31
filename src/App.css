@@ -1,0 +1,28 @@
+.atom-list {
+  display: flex;
+  flex-wrap: wrap;
+}
+.atom-list > * {
+  margin: 10px 5px;
+}
+.card {
+               /* Set width of cards */
+  border: 1px solid black;    /* Set up Border */
+  border-radius: 5px;           /* Slightly Curve edges */
+  overflow: hidden;             /* Fixes the corners */
+  display: flex;                /* Children use Flexbox */
+  flex-direction: column;       /* Rotate Axis */
+  text-align: center;
+}
+.card > * {
+padding: 0 10px 0;
+}
+
+.card-header {
+border-bottom: 1px solid black;
+font-size: 1.2em;
+}
+
+.card-main {
+line-height: 1.5;
+}
