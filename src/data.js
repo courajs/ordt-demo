@@ -1,5 +1,11 @@
 import { Sequence } from './ordts/sequence.js';
 
+let LAST_ID = 0;
+
+export function fork(seq) {
+  return new Sequence((++LAST_ID).toString(), seq.atoms);
+}
+
 let s = new Sequence("0", [
   {type: 'root',
     id: {
@@ -11,12 +17,8 @@ let s = new Sequence("0", [
   }
 ]);
 
+s.become('heyo');
 s.become('hey');
 
-export default s;
+export default fork(s);
 
-let LAST_ID = 0;
-
-export function fork(seq) {
-  return new Sequence((++LAST_ID).toString(), seq.atoms);
-}

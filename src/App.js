@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
 import base, {fork} from './data.js';
-// import { Sequence } from './ordts/sequence.js';
+import { Sequence, idEq } from './ordts/sequence.js';
 
 function App() {
   let [versions] = useState([base]);
@@ -16,11 +16,11 @@ export default App;
 
 function Text({sequence}) {
   let [isOpen, setOpen] = useState(true);
-  let [value, setValue] = useState(sequence.evaluate());
+  let [{value,index}, setValue] = useState(sequence.indexedEvaluate());
 
   let update = (e) => {
     sequence.become(e.target.value);
-    setValue(sequence.evaluate());
+    setValue(sequence.indexedEvaluate());
   }
 
   return <div>
@@ -36,7 +36,7 @@ function Text({sequence}) {
         }
       </button>
       { isOpen ?
-          <History atoms={sequence.atoms} />
+          <History atoms={sequence.atoms} index={index}/>
           : null
       }
     </div>
@@ -46,8 +46,11 @@ function atomKey(atom) {
   return atom.id.site + atom.id.index;
 }
 
-function History({atoms}) {
-  return <div className="atom-list">{atoms.map(a=><Atom atom={a} key={atomKey(a)} />)}</div>
+function History({atoms, index}) {
+  console.log(index);
+  return <div className="atom-list">{
+    atoms.map(a=> <Atom atom={a} included={index.find(id=>idEq(id,a.id))} key={atomKey(a)} />)
+  }</div>
 }
 
 // const colors = ['#058e03', '#005cc5', '#c5005b', '#c5c505'];
@@ -62,14 +65,18 @@ function idMsg(id) {
   }
 }
 
-function atomMsg(atom) {
+function atomMsg(atom, included=false) {
   switch(atom.type) {
     case 'root':
       return '∅';
     case 'delete':
       return 'Delete';
     case 'insert':
-      return `Insert '${atom.value.ch}'`;
+      if (included) {
+        return <>Insert '<strong style={{fontSize:'1.4em'}}>{atom.value.ch}</strong>'</>
+      } else {
+        return `Insert '${atom.value.ch}'`;
+      }
     default:
       throw new Error('unrecognized atom type');
   }
@@ -87,15 +94,18 @@ function atomParentMsg(atom) {
   }
 }
 function c(atom) {
-  console.log('#'+colors[colors.length - atom.id.site-1]);
   return '#'+colors[atom.id.site];
 }
 
-function Atom({atom}) {
-  return <div className="card">
+function Atom({atom, included}) {
+  let names = ['card'];
+  if (included) {
+    names.push('included');
+  }
+  return <div className={names.join(' ')}>
           <div className="card-header" style={{backgroundColor:c(atom)}}>{idMsg(atom.id)}</div>
           <div className="card-main">
-            <div className="description">{atomMsg(atom)}</div>
+            <div className="description">{atomMsg(atom, included)}</div>
             <div className="parent">{atomParentMsg(atom)}</div>
           </div>
         </div>
