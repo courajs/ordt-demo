@@ -1,9 +1,12 @@
 import { Sequence } from './ordts/sequence.js';
 
-const site = "0.6593416794305285";
-function id(index) {
+const site = "5";
+const sitebefore = "4";
+const siteafter = "6";
+const siteother = "q";
+function id(index, s = site) {
   return {
-    site,
+    site: s,
     index: index,
     lamport: index,
   };
@@ -18,7 +21,6 @@ describe('sequence ORDT evaluation', function() {
     ]);
     expect(s.evaluate()).toEqual('hi');
   });
-
 
   it('evaluates a string with deletions', function() {
     let s = new Sequence(site, [
@@ -47,7 +49,7 @@ describe('sequence ORDT evaluation', function() {
 });
 
 describe('mutation operations', function() {
-  it('detects if no change', function() {
+  it('makes no edit if the string is the same', function() {
     let atoms = [
       {type: 'root', id: id(0)},
       {type: 'insert', id: id(1), value: {ch:'a', after: id(0)}},
@@ -60,24 +62,9 @@ describe('mutation operations', function() {
     expect(s.atoms).toMatchObject(atoms);
   });
 
-
-  it('can append to end', function() {
-    let atoms = [
-      {type: 'root', id: id(0)},
-      {type: 'insert', id: id(1), value: {ch:'a', after: id(0)}},
-    ];
-    let s = new Sequence(site, atoms);
-    expect(s.become('ab')).toMatchObject([
-        {type: 'insert', id: id(2), value: {ch:'b', after: id(1)}}
-    ]);
-    expect(s.atoms).toMatchObject([
-      {type: 'root', id: id(0)},
-      {type: 'insert', id: id(1), value: {ch:'a', after: id(0)}},
-      {type: 'insert', id: id(2), value: {ch:'b', after: id(1)}},
-    ]);
-  });
-
-  it('can replace longer within', function() {
+  it('can replace ranges of characters', function() {
+    // 'abc' -> 'axyc'
+    // delete the 'b', and insert an 'xy' after the 'a'.
     let atoms = [
         {type: 'root', id: id(0)},
         {type: 'insert', id: id(1), value: {ch:'a', after: id(0)}},
@@ -101,14 +88,14 @@ describe('mutation operations', function() {
     ]);
   });
 
-  it('acceptance test', function() {
+  it('handles insertions and deletions in all positions', function() {
     let cases = [
-      ['world', 'hello world', 6],
-      ['hello world', 'world', 6],
-      ['hello', 'hello world', 6],
-      ['hello world', 'hello', 6],
-      ['abcdef', 'abxyzef', 5],
-      ['abcdef', 'abxef', 3],
+      ['world', 'hello world', 6], // insert at beginning
+      ['hello world', 'world', 6], // delete at beginning
+      ['hello', 'hello world', 6], // insert at end
+      ['hello world', 'hello', 6], // delete at end
+      ['abcdef', 'abxyzef', 5],    // replace a range with a longer range
+      ['abcdef', 'abxef', 3],      // replace a range with a shorter range
     ];
 
     for (let [start, target, diff] of cases) {
@@ -118,5 +105,21 @@ describe('mutation operations', function() {
       expect(s.become(target).length).toEqual(diff);
       expect(s.evaluate()).toEqual(target);
     }
+  });
+
+  it('sorts an atom\'s children by descending lamport, then by ascending site id', function(){
+    let root = {type: 'root', id: id(0)};
+
+    // sorts correctly when inserting a newer branch later
+    let s = new Sequence(site, [root]);
+    s.insertAtom({type:'insert', id: id(1), value: {ch:'a', after:id(0)}});
+    s.insertAtom({type:'insert', id: id(2, siteother), value: {ch:'b', after:id(0)}});
+    expect(s.evaluate()).toEqual('ba');
+
+    // sorts correctly when inserting an older branch later
+    s = new Sequence(site, [root]);
+    s.insertAtom({type:'insert', id: id(2), value: {ch:'a', after: id(0)}});
+    s.insertAtom({type:'insert', id: id(1, siteother), value: {ch:'b', after: id(0)}});
+    expect(s.evaluate()).toEqual('ab');
   });
 });

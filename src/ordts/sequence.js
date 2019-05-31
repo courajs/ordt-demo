@@ -1,6 +1,24 @@
 export function idEq(a, b) {
   return a.site === b.site && a.index === b.index;
 }
+export function idLt(a, b) {
+  return a.lamport < b.lamport || (a.lamport === b.lamport && a.site < b.site);
+}
+export function siblingLt(a, b) {
+  return a.lamport > b.lamport || (a.lamport === b.lamport && a.site < b.site);
+}
+export function parent(atom) {
+  switch (atom.type) {
+    case 'delete':
+      return atom.value;
+      break;
+    case 'insert':
+      return atom.value.after;
+      break;
+    default:
+      throw new Error('parent not defined for this atom type');
+  }
+}
 
 export class Sequence {
   constructor(id, atoms) {
@@ -53,25 +71,35 @@ export class Sequence {
     }
   }
 
+  // Uses [8] from http://archagon.net/blog/2018/03/24/data-laced-with-history/
+  //
+  // iterate through the atoms to the right of the head atom until you
+  // find one whose parent has a lower Lamport timestamp than the head. This
+  // atom is the first atom past the causal block.
+  //
   insertAtom(atom) {
-    if (atom.id.site !== this.id) {
-      throw new Error('atom merge is not yet implemented for remote atoms');
+    let parentId = parent(atom);
+
+    let parentIndex = this.atoms.findIndex(a => idEq(a.id, parentId));
+    if (parentIndex === -1) {
+      return false;
     }
 
-    if (atom.type === 'delete') {
-      let i = this.atoms.findIndex(a => idEq(a.id, atom.value));
-      if (i === -1) { return false; }
-      this.atoms.splice(i+1, 0, atom);
-      return true;
-    } else if (atom.type === 'insert') {
-      let i = this.atoms.findIndex(a => idEq(a.id, atom.value.after));
-      if (i === -1) { return false; }
-      while (this.atoms[i+1] && this.atoms[i+1].type === 'delete') { 
-        i++;
+    let siblingIndices = [];
+    for (let i = parentIndex+1; i<this.atoms.length && !idLt(parent(this.atoms[i]), parentId); i++) {
+      if (idEq(parent(this.atoms[i]), parentId)) {
+        siblingIndices.push(i);
       }
-      this.atoms.splice(i+1, 0, atom);
-      return true;
     }
+
+    let placeBefore = parentIndex+1;
+    for(let i = 0; i < siblingIndices.length; i++) {
+      if (siblingLt(this.atoms[siblingIndices[i]].id, atom.id)) {
+        placeBefore = siblingIndices[i+1] || this.atoms.length;
+      }
+    }
+    this.atoms.splice(placeBefore, 0, atom);
+    return true;
   }
 
   // Because of the way DOM input events work, we don't get granular information
