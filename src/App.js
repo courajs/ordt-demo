@@ -1,27 +1,33 @@
 import React, { useState } from 'react';
 import './App.css';
 import base from './data.js';
-import { evaluate } from './ordts/sequence.js';
+// import { Sequence } from './ordts/sequence.js';
 
 function App() {
-  let [collections] = useState([base]);
+  let [versions] = useState([base]);
   return (
     <div className="App">
-      {collections.map(c => <StringThing collection={c} key={c.site} />)}
+      {versions.map(seq => <Text sequence={seq} key={seq.id} />)}
     </div>
   );
 }
 
 export default App;
 
-
-function StringThing({collection}) {
+function Text({sequence}) {
   let [isOpen, setOpen] = useState(true);
+  let [value, setValue] = useState(sequence.evaluate());
 
-  let value = evaluate(collection.atoms);
+  let update = (e) => {
+    sequence.become(e.target.value);
+    setValue(sequence.evaluate());
+  }
 
   return <div>
-      <textarea defaultValue={value}></textarea>
+      <textarea
+        defaultValue={value}
+        onInput={update}
+      ></textarea>
       <button onClick={()=>setOpen(!isOpen)}>
         { isOpen ?
             "Hide history"
@@ -30,7 +36,7 @@ function StringThing({collection}) {
         }
       </button>
       { isOpen ?
-          <History atoms={collection.atoms} />
+          <History atoms={sequence.atoms} />
           : null
       }
     </div>

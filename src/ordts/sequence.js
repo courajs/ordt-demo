@@ -17,10 +17,8 @@ export function parent(atom) {
   switch (atom.type) {
     case 'delete':
       return atom.value;
-      break;
     case 'insert':
       return atom.value.after;
-      break;
     default:
       throw new Error('parent not defined for this atom type');
   }
@@ -46,6 +44,10 @@ export class Sequence {
     }
     this.currentIndex = index;
     this.currentLamport = lamport;
+  }
+
+  fork() {
+    return new Sequence(Math.random().toString(), this.atoms);
   }
 
   nextId() {
