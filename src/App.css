@@ -1,3 +1,8 @@
+input {
+  margin: 5px;
+  font-size: 2em;
+}
+
 .atom-list {
   display: flex;
   flex-wrap: wrap;

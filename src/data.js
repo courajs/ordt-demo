@@ -17,8 +17,7 @@ let s = new Sequence("0", [
   }
 ]);
 
-s.become('heyo');
-s.become('hey');
+s.become('cmd');
 
-export default fork(s);
+export default s;
 
