@@ -46,6 +46,31 @@ describe('sequence ORDT evaluation', function() {
       index: [id(1), id(4)],
     });
   });
+
+  it("can provide the index in the final string of a given atom", function() {
+    let s = new Sequence(site, [
+      {type: 'root', id: id(0)},
+      {type: 'insert', id: id(1), value: {ch:'h', after: id(0)}},
+      {type: 'insert', id: id(2), value: {ch:'i', after: id(1)}},
+    ]);
+    expect(s.indexBefore(id(1))).toEqual(0);
+    expect(s.indexAfter(id(1))).toEqual(1);
+    expect(s.indexBefore(id(2))).toEqual(1);
+    expect(s.indexAfter(id(2))).toEqual(2);
+
+    s = new Sequence(site);
+    // root = id(0), t = id(1), s = id(4), last e = id(9)
+    // indexBefore(s) = 3
+    // indexAfter(s) = 4
+    s.become('this here');
+
+    // s = id(4)
+    // indexBefore(s) = 3
+    // indexAfter(s) = 3
+    s.become('thi here');
+    expect(s.indexBefore(id(4))).toEqual(3);
+    expect(s.indexAfter(id(4))).toEqual(3);
+  });
 });
 
 describe('mutation operations', function() {
@@ -171,4 +196,3 @@ describe('mutation operations', function() {
     expect(s1.evaluate()).toEqual('ctrl-alt-del');
   });
 });
-

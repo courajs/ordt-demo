@@ -27,7 +27,11 @@ export function parent(atom) {
 export class Sequence {
   constructor(id, atoms) {
     this.id = id;
-    this.atoms = atoms.slice();
+    if (atoms) {
+      this.atoms = atoms.slice();
+    } else {
+      this.atoms = [{type:'root', id:{site: id, index: 0, lamport: 0, wall:new Date().valueOf()}}]
+    }
     this._determineIndexAndLamport();
   }
 
@@ -53,6 +57,37 @@ export class Sequence {
       lamport: ++this.currentLamport,
       wall: new Date().valueOf(),
     };
+  }
+
+  indexBefore(id) {
+    let i = 0;
+    for (let atom of this.atoms) {
+      if (idEq(id, atom.id)) {
+        return i;
+      } else if (atom.type === 'insert') {
+        i++;
+      } else if (atom.type === 'delete') {
+        i--;
+      }
+    }
+  }
+
+  indexAfter(id) {
+    let result = 0;
+    for (let i=0; i<this.atoms.length; i++) {
+      let atom = this.atoms[i];
+      if (idEq(id, atom.id)) {
+        if (this.atoms[i+1] && this.atoms[i+1].type === 'delete') {
+          return result;
+        } else {
+          return result+1;
+        }
+      } else if (atom.type === 'insert') {
+        result++;
+      } else if (atom.type === 'delete') {
+        result--;
+      }
+    }
   }
 
   evaluate() {
