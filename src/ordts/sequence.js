@@ -99,7 +99,7 @@ export class Sequence {
     for (let atom of this.atoms) {
       if (atom.type === 'insert') {
         result.push(atom);
-      } else if (atom.type === 'delete') {
+      } else if (atom.type === 'delete' && idEq(atom.value, result[result.length-1].id)) {
         result.pop();
       }
     }

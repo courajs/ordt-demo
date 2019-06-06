@@ -33,6 +33,18 @@ describe('sequence ORDT evaluation', function() {
     expect(s.evaluate()).toEqual('ho');
   });
 
+  it('evaluates concurrent deletes properly', function() {
+    let s1 = new Sequence(site, [{type:'root', id: id(0)}]);
+    s1.become('abc');
+    let s2 = new Sequence(site2, s1.atoms);
+    s1.become('aonec');
+    s2.become('atwoc');
+
+    s1.mergeAtoms(s2.atoms);
+
+    expect(s1.evaluate()).toEqual('aonetwoc');
+  });
+
   it('can provide an index for the id of each character', function() {
     let s = new Sequence(site, [
       {type: 'root', id: id(0)},
