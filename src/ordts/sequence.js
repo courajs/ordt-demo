@@ -1,8 +1,20 @@
 export function idEq(idA, idB) {
-  return idA.site === idB.site && idA.index === idB.index;
+  if (idA === null && idB === null) {
+    return true;
+  } else if (idA === null || idB === null) {
+    return false;
+  } else {
+    return idA.site === idB.site && idA.index === idB.index;
+  }
 }
 export function idLt(idA, idB) {
-  return idA.lamport < idB.lamport || (idA.lamport === idB.lamport && idA.site < idB.site);
+  if (idB === null) {
+    return false;
+  } else if (idA === null && idB !== null) {
+    return true;
+  } else {
+    return idA.lamport < idB.lamport || (idA.lamport === idB.lamport && idA.site < idB.site);
+  }
 }
 export function siblingLt(atomA, atomB) {
   if (atomA.type === 'delete' && atomB.type !== 'delete') {
@@ -30,7 +42,7 @@ export class Sequence {
     if (atoms) {
       this.atoms = atoms.slice();
     } else {
-      this.atoms = [{type:'root', id:{site: id, index: 0, lamport: 0, wall:new Date().valueOf()}}]
+      this.atoms = [];
     }
     this._determineIndexAndLamport();
   }
@@ -119,9 +131,14 @@ export class Sequence {
   insertAtom(atom) {
     let parentId = parent(atom);
 
-    let parentIndex = this.atoms.findIndex(a => idEq(a.id, parentId));
-    if (parentIndex === -1) {
-      return false;
+    let parentIndex;
+    if (parentId) {
+      parentIndex = this.atoms.findIndex(a => idEq(a.id, parentId));
+      if (parentIndex === -1) {
+        return false;
+      }
+    } else {
+      parentIndex = -1;
     }
 
     let siblingIndices = [];
@@ -212,7 +229,7 @@ export class Sequence {
       this.insertAtom(atom);
     }
 
-    let prevId = index[start-1] || this.atoms[0].id;
+    let prevId = index[start-1] || null;
     for (let i = start; i < str.length - back; i++) {
       let id = this.nextId();
       let atom = {

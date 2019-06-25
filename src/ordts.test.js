@@ -5,17 +5,20 @@ const site2 = "6";
 const site3 = "7";
 const siteother = "q";
 function id(index, s = site) {
+  if (index === 0) {
+    return null;
+  } else {
   return {
     site: s,
     index: index,
     lamport: index,
   };
+  }
 }
 
 describe('sequence ORDT evaluation', function() {
   it('evaluates a basic string of atoms', function() {
     let s = new Sequence(site, [
-      {type: 'root', id: id(0)},
       {type: 'insert', id: id(1), value: {ch:'h', after: id(0)}},
       {type: 'insert', id: id(2), value: {ch:'i', after: id(1)}},
     ]);
@@ -24,7 +27,6 @@ describe('sequence ORDT evaluation', function() {
 
   it('evaluates a string with deletions', function() {
     let s = new Sequence(site, [
-      {type: 'root', id: id(0)},
       {type: 'insert', id: id(1), value: {ch:'h', after: id(0)}},
       {type: 'insert', id: id(2), value: {ch:'i', after: id(1)}},
       {type: 'delete', id: id(3), value: id(2)},
@@ -34,7 +36,7 @@ describe('sequence ORDT evaluation', function() {
   });
 
   it('evaluates concurrent deletes properly', function() {
-    let s1 = new Sequence(site, [{type:'root', id: id(0)}]);
+    let s1 = new Sequence(site);
     s1.become('abc');
     let s2 = new Sequence(site2, s1.atoms);
     s1.become('aonec');
@@ -47,7 +49,6 @@ describe('sequence ORDT evaluation', function() {
 
   it('can provide an index for the id of each character', function() {
     let s = new Sequence(site, [
-      {type: 'root', id: id(0)},
       {type: 'insert', id: id(1), value: {ch:'h', after: id(0)}},
       {type: 'insert', id: id(2), value: {ch:'i', after: id(1)}},
       {type: 'delete', id: id(3), value: id(2)},
@@ -61,7 +62,6 @@ describe('sequence ORDT evaluation', function() {
 
   it("can provide the index in the final string of a given atom", function() {
     let s = new Sequence(site, [
-      {type: 'root', id: id(0)},
       {type: 'insert', id: id(1), value: {ch:'h', after: id(0)}},
       {type: 'insert', id: id(2), value: {ch:'i', after: id(1)}},
     ]);
@@ -71,7 +71,6 @@ describe('sequence ORDT evaluation', function() {
     expect(s.indexAfter(id(2))).toEqual(2);
 
     s = new Sequence(site);
-    // root = id(0), t = id(1), s = id(4), last e = id(9)
     // indexBefore(s) = 3
     // indexAfter(s) = 4
     s.become('this here');
@@ -88,7 +87,6 @@ describe('sequence ORDT evaluation', function() {
 describe('mutation operations', function() {
   it('makes no edit if the string is the same', function() {
     let atoms = [
-      {type: 'root', id: id(0)},
       {type: 'insert', id: id(1), value: {ch:'a', after: id(0)}},
       {type: 'insert', id: id(2), value: {ch:'b', after: id(1)}},
       {type: 'delete', id: id(4), value: id(2)},
@@ -103,7 +101,6 @@ describe('mutation operations', function() {
     // 'abc' -> 'axyc'
     // delete the 'b', and insert an 'xy' after the 'a'.
     let atoms = [
-        {type: 'root', id: id(0)},
         {type: 'insert', id: id(1), value: {ch:'a', after: id(0)}},
         {type: 'insert', id: id(2), value: {ch:'b', after: id(1)}},
         {type: 'insert', id: id(3), value: {ch:'c', after: id(2)}},
@@ -115,7 +112,6 @@ describe('mutation operations', function() {
         {type: 'insert', id: id(6), value: {ch:'y', after: id(5)}},
     ]);
     expect(s.atoms).toMatchObject([
-        {type: 'root', id: id(0)},
         {type: 'insert', id: id(1), value: {ch:'a', after: id(0)}},
         {type: 'insert', id: id(5), value: {ch:'x', after: id(1)}},
         {type: 'insert', id: id(6), value: {ch:'y', after: id(5)}},
@@ -136,7 +132,7 @@ describe('mutation operations', function() {
     ];
 
     for (let [start, target, diff] of cases) {
-      let s = new Sequence(site, [{type: 'root', id: id(0)}]);
+      let s = new Sequence(site);
       s.become(start);
       expect(s.evaluate()).toEqual(start);
       expect(s.become(target).length).toEqual(diff);
@@ -145,23 +141,21 @@ describe('mutation operations', function() {
   });
 
   it('sorts an atom\'s children by descending lamport, then by ascending site id', function(){
-    let root = {type: 'root', id: id(0)};
-
     // sorts correctly when inserting a newer branch later
-    let s = new Sequence(site, [root]);
+    let s = new Sequence(site);
     s.insertAtom({type:'insert', id: id(1), value: {ch:'a', after:id(0)}});
     s.insertAtom({type:'insert', id: id(2, siteother), value: {ch:'b', after:id(0)}});
     expect(s.evaluate()).toEqual('ba');
 
     // sorts correctly when inserting an older branch later
-    s = new Sequence(site, [root]);
+    s = new Sequence(site);
     s.insertAtom({type:'insert', id: id(2), value: {ch:'a', after: id(0)}});
     s.insertAtom({type:'insert', id: id(1, siteother), value: {ch:'b', after: id(0)}});
     expect(s.evaluate()).toEqual('ab');
   });
 
   it('always sorts sibling deletes before inserts', function() {
-    let s1 = new Sequence(site,[{type:'root',id:id(0)}]);
+    let s1 = new Sequence(site);
     s1.become('ab');
     let s2 = new Sequence(site2,s1.atoms);
 
@@ -176,7 +170,6 @@ describe('mutation operations', function() {
 
     expect(s1.evaluate()).toEqual('axc');
     expect(s1.atoms).toMatchObject([
-      {type:'root',id:id(0)},
       {type:'insert',id:id(1),value:{ch:'a', after:id(0)}},
       {type:'insert',id:id(2),value:{ch:'b', after:id(1)}},
       {type:'delete',id:id(3),value:id(2)},
@@ -194,7 +187,7 @@ describe('mutation operations', function() {
 
   // The example from http://archagon.net/blog/2018/03/24/data-laced-with-history/#causal-trees
   it('merges a complex concurrent edit', function() {
-    let s1 = new Sequence(site, [{type:'root',id:id(0)}]);
+    let s1 = new Sequence(site);
     s1.become('cmd');
     let s2 = new Sequence(site2, s1.atoms);
     let s3 = new Sequence(site3, s1.atoms);
