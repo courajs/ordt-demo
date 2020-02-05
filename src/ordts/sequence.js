@@ -62,6 +62,10 @@ export class Sequence {
     this.currentLamport = lamport;
   }
 
+  rootId() {
+    return this.atoms.map(a => a.type === 'root' ? a.id : null)[0]
+  }
+
   nextId() {
     return {
       site: this.id,
@@ -229,7 +233,7 @@ export class Sequence {
       this.insertAtom(atom);
     }
 
-    let prevId = index[start-1] || null;
+    let prevId = index.length === 0 ? this.rootId() : index[start-1] || null;
     for (let i = start; i < str.length - back; i++) {
       let id = this.nextId();
       let atom = {
@@ -242,6 +246,7 @@ export class Sequence {
       };
       prevId = id;
       fresh.push(atom);
+      console.log('become loop: fresh =', fresh)
       this.insertAtom(atom);
     }
 

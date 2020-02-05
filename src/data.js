@@ -17,6 +17,8 @@ let s = new Sequence("0", [
   }
 ]);
 
+// s = new Sequence("0")
+
 s.become('cmd');
 
 export default s;
